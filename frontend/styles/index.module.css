@@ -1,0 +1,126 @@
+.dashboardContainer {
+  font-family: 'Space Grotesk', 'Noto Sans', sans-serif;
+  background-color: #111518;
+  color: #9cadba;
+  padding: 0 10rem;
+  min-height: 100vh;
+}
+
+.section {
+  margin-bottom: 2rem;
+}
+
+.sectionTitle {
+  color: white;
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin-bottom: 0.5rem;
+}
+
+.sectionSubtitle {
+  font-size: 0.875rem;
+  font-weight: 400;
+  margin: 0;
+}
+
+.overviewGrid {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.overviewCard {
+  flex: 1;
+  min-width: 10rem;
+  background-color: #283239;
+  border: 1px solid #3b4a54;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.cardTitle {
+  color: white;
+  font-size: 1rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.cardValue {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+
+.cardChange {
+  font-size: 1rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.forecastSection {
+  margin-bottom: 2rem;
+}
+
+.forecastSummary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.forecastLabel {
+  color: #9cadba;
+  font-size: 1rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.forecastValue {
+  color: white;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+
+.forecastChange {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.forecastPeriod {
+  color: #9cadba;
+  font-size: 1rem;
+  font-weight: 400;
+  margin: 0;
+}
+
+.forecastChangeValue {
+  font-size: 1rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.alertsContainer,
+.anomalyContainer {
+  background-color: #283239;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 1024px) {
+  .dashboardContainer {
+    padding: 0 2rem;
+  }
+
+  .overviewGrid {
+    flex-direction: column;
+  }
+}

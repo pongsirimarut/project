@@ -1,0 +1,19 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;700;900&family=Space+Grotesk:wght@400;500;700&display=swap');
+
+body {
+  margin: 0;
+  font-family: 'Space Grotesk', 'Noto Sans', sans-serif;
+}
+
+.app {
+  width: auto;
+  min-height: 100vh;
+  background-color: #111518;
+  color: #9cadba;
+}
+
+.content {
+  padding: 2rem 0;
+  max-width: 960px;
+  margin: 0 auto;
+}
