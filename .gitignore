@@ -8,3 +8,7 @@ node_modules
 *.zip
 backend/node_modules
 frontend/node_modules
+*.jpg
+*.png
+*.mp4
+*.pdf
