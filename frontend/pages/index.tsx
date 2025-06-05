@@ -34,7 +34,6 @@ const Dashboard = () => {
   const hasDirtyPanelAlert = useRef(false);
   const hasConnectionAlert = useRef(false);
 
-  // ใช้ Environment Variable สำหรับ API URL
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8090';
 
   const sendNotification = (message: string) => {
@@ -80,14 +79,17 @@ const Dashboard = () => {
       setLoading(true);
       setError(null);
       try {
+        console.log(`Fetching weather data from ${API_URL}/weather?city=Bangkok`);
         const weatherResponse = await retry(() => axios.get(`${API_URL}/weather?city=Bangkok`, {
           timeout: 20000,
           headers: { 'Content-Type': 'application/json' }
         }));
+        console.log('Weather Response:', weatherResponse.data);
         if (Array.isArray(weatherResponse.data) && weatherResponse.data.length > 0) {
           setWeatherData(weatherResponse.data);
 
           const weatherToday = weatherResponse.data[0];
+          console.log(`Forecasting with data: ${JSON.stringify(weatherToday)}`);
           const forecastResponse = await retry(() => axios.post(`${API_URL}/forecast`, {
             solar_intensity: weatherToday.solar_intensity,
             temperature: weatherToday.temperature,
@@ -98,8 +100,10 @@ const Dashboard = () => {
             timeout: 20000,
             headers: { 'Content-Type': 'application/json' }
           }));
+          console.log('Forecast Response:', forecastResponse.data);
           setActualEnergy(forecastResponse.data.energy_output);
 
+          console.log(`Detecting anomaly with energy_output: ${forecastResponse.data.energy_output}, solar_intensity: ${weatherToday.solar_intensity}`);
           const anomalyResponse = await retry(() => axios.post(`${API_URL}/detect-anomaly`, {
             energy_output: forecastResponse.data.energy_output,
             solar_intensity: weatherToday.solar_intensity,
@@ -107,6 +111,7 @@ const Dashboard = () => {
             timeout: 20000,
             headers: { 'Content-Type': 'application/json' }
           }));
+          console.log('Anomaly Response:', anomalyResponse.data);
           setAnomaly(anomalyResponse.data);
         } else {
           console.error('ข้อมูลสภาพอากาศไม่ถูกต้อง:', weatherResponse.data);
@@ -129,6 +134,7 @@ const Dashboard = () => {
         }]);
         setActualEnergy(1.5);
         setAnomaly({ anomaly: false, message: 'ปกติ' });
+        setError(error.response?.data || error.message);
       } finally {
         setLoading(false);
       }
@@ -177,61 +183,68 @@ const Dashboard = () => {
     }
   }, [weatherData, anomaly]);
 
-  if (loading) return <div className={styles.loading}>กำลังโหลดข้อมูล...</div>;
-  if (error) return <div className={styles.error}>ข้อผิดพลาด: {error}</div>;
-
   return (
     <div className={styles.dashboardContainer}>
       <div className={styles.section}>
         <h1 className={styles.sectionTitle}>ภาพรวมระบบ</h1>
         <p className={styles.sectionSubtitle}>ติดตามประสิทธิภาพและสุขภาพของระบบแผงโซล่าเซลล์ของคุณแบบเรียลไทม์</p>
       </div>
-      {weatherData.length > 0 && (
-        <div className={styles.overviewGrid}>
-          <div className={styles.overviewCard}>
-            <p className={styles.cardTitle}>ความเข้มแสงอาทิติตย์</p>
-            <p className={styles.cardValue}>{weatherData[0].solar_intensity} W/m²</p>
+      {loading ? (
+        <div className={styles.loading}>กำลังโหลดข้อมูล...</div>
+      ) : error ? (
+        <div className={styles.error}>ข้อผิดพลาด: {error}</div>
+      ) : (
+        <>
+          {weatherData.length > 0 ? (
+            <div className={styles.overviewGrid}>
+              <div className={styles.overviewCard}>
+                <p className={styles.cardTitle}>ความเข้มแสงอาทิติตย์</p>
+                <p className={styles.cardValue}>{weatherData[0].solar_intensity} W/m²</p>
+              </div>
+              <div className={styles.overviewCard}>
+                <p className={styles.cardTitle}>อุณหภูมิ</p>
+                <p className={styles.cardValue}>{weatherData[0].temperature?.toFixed(1) || 'N/A'}°C</p>
+              </div>
+              <div className={styles.overviewCard}>
+                <p className={styles.cardTitle}>ความชื้น</p>
+                <p className={styles.cardValue}>{weatherData[0].cloud_cover}%</p>
+              </div>
+            </div>
+          ) : (
+            <div className={styles.noData}>ไม่มีข้อมูลสภาพอากาศ</div>
+          )}
+          <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>การพยากรณ์พลังงาน</h2>
           </div>
-          <div className={styles.overviewCard}>
-            <p className={styles.cardTitle}>อุณหภูมิ</p>
-            <p className={styles.cardValue}>{weatherData[0].temperature?.toFixed(1) || 'N/A'}°C</p>
+          <div className={styles.forecastSection}>
+            <div className={styles.forecastSummary}>
+              <p className={styles.forecastLabel}>พลังงานที่ได้รับวันนี้</p>
+              <p className={styles.forecastValue}>{actualEnergy.toFixed(2)} kWh</p>
+              <p className={styles.forecastLabel}>คาดว่าวันพรุ่งนี้จะได้พลังงาน</p>
+              <p className={styles.forecastValue}>{energyTomorrow.toFixed(2)} kWh</p>
+            </div>
+            <EnergyChart weatherData={weatherData} actualEnergy={actualEnergy} onEnergyTomorrow={setEnergyTomorrow} />
           </div>
-          <div className={styles.overviewCard}>
-            <p className={styles.cardTitle}>ความชื้น</p>
-            <p className={styles.cardValue}>{weatherData[0].cloud_cover}%</p>
+          <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>การแจ้งเตือนระบบ</h2>
           </div>
-        </div>
-      )}
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>การพยากรณ์พลังงาน</h2>
-      </div>
-      <div className={styles.forecastSection}>
-        <div className={styles.forecastSummary}>
-          <p className={styles.forecastLabel}>พลังงานที่ได้รับวันนี้</p>
-          <p className={styles.forecastValue}>{actualEnergy.toFixed(2)} kWh</p>
-          <p className={styles.forecastLabel}>คาดว่าวันพรุ่งนี้จะได้พลังงาน</p>
-          <p className={styles.forecastValue}>{energyTomorrow.toFixed(2)} kWh</p>
-        </div>
-        <EnergyChart weatherData={weatherData} actualEnergy={actualEnergy} onEnergyTomorrow={setEnergyTomorrow} />
-      </div>
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>การแจ้งเตือนระบบ</h2>
-      </div>
-      {alerts.length > 0 && (
-        <div className={styles.alertsContainer}>
-          {alerts.map((alert, index) => (
-            <AlertCard key={index} message={alert} />
-          ))}
-        </div>
-      )}
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>การตรวจจับความผิดปกติ</h2>
-      </div>
-      {anomaly && (
-        <div className={styles.anomalyContainer}>
-          <p>{anomaly.message}</p>
-          {anomaly.anomaly && <p>คำแนะนำ: กรุณาตรวจสอบแผงโซล่าเซลล์</p>}
-        </div>
+          {alerts.length > 0 && (
+            <div className={styles.alertsContainer}>
+              {alerts.map((alert, index) => (
+                <AlertCard key={index} message={alert} />
+              ))}
+            </div>
+          )}
+          <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>การตรวจจับความผิดปกติ</h2>
+          </div>
+          {anomaly && (
+            <div className={styles.anomalyContainer}>
+              <p>{anomaly.message}</p>
+              {anomaly.anomaly && <p>คำแนะนำ: กรุณาตรวจสอบแผงโซล่าเซลล์</p>}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
