@@ -27,10 +27,15 @@ const Dashboard = () => {
   const [anomaly, setAnomaly] = useState<AnomalyData | null>(null);
   const [alerts, setAlerts] = useState<string[]>([]);
   const [energyTomorrow, setEnergyTomorrow] = useState<number>(0);
-  const [actualEnergy, setActualEnergy] = useState<number>(0); // เพิ่ม state สำหรับพลังงานจริง
+  const [actualEnergy, setActualEnergy] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const hasCloudAlert = useRef(false);
   const hasDirtyPanelAlert = useRef(false);
   const hasConnectionAlert = useRef(false);
+
+  // ใช้ Environment Variable สำหรับ API URL
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8090';
 
   const sendNotification = (message: string) => {
     if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
@@ -39,7 +44,7 @@ const Dashboard = () => {
     if (typeof window !== 'undefined') {
       requestNotificationPermission().then(token => {
         if (token) {
-          axios.post('http://localhost:8090/send-notification', {
+          axios.post(`${API_URL}/send-notification`, {
             token,
             title: 'แจ้งเตือนพลังงานแสงอาทิตย์',
             body: message,
@@ -60,7 +65,7 @@ const Dashboard = () => {
       } catch (error: any) {
         if (i === retries - 1) {
           console.error(`Failed after ${retries} retries: ${error.message}`);
-          setAlerts(prev => [...prev, `ไม่สามารถดึงข้อมูลได้: ${error.message}`]);
+          setError(`ไม่สามารถดึงข้อมูลได้: ${error.message}`);
           sendNotification(`ไม่สามารถดึงข้อมูลได้: ${error.message}`);
           throw error;
         }
@@ -72,8 +77,10 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        const weatherResponse = await retry(() => axios.get('http://localhost:8090/weather?city=Bangkok', {
+        const weatherResponse = await retry(() => axios.get(`${API_URL}/weather?city=Bangkok`, {
           timeout: 20000,
           headers: { 'Content-Type': 'application/json' }
         }));
@@ -81,7 +88,7 @@ const Dashboard = () => {
           setWeatherData(weatherResponse.data);
 
           const weatherToday = weatherResponse.data[0];
-          const forecastResponse = await retry(() => axios.post('http://localhost:8090/forecast', {
+          const forecastResponse = await retry(() => axios.post(`${API_URL}/forecast`, {
             solar_intensity: weatherToday.solar_intensity,
             temperature: weatherToday.temperature,
             cloud_cover: weatherToday.cloud_cover,
@@ -91,9 +98,9 @@ const Dashboard = () => {
             timeout: 20000,
             headers: { 'Content-Type': 'application/json' }
           }));
-          setActualEnergy(forecastResponse.data.energy_output); // ใช้ค่า forecast เป็นพลังงานจริงชั่วคราว
+          setActualEnergy(forecastResponse.data.energy_output);
 
-          const anomalyResponse = await retry(() => axios.post('http://localhost:8090/detect-anomaly', {
+          const anomalyResponse = await retry(() => axios.post(`${API_URL}/detect-anomaly`, {
             energy_output: forecastResponse.data.energy_output,
             solar_intensity: weatherToday.solar_intensity,
           }, {
@@ -109,7 +116,7 @@ const Dashboard = () => {
             cloud_cover: 50,
             date: new Date().toISOString().split('T')[0],
           }]);
-          setActualEnergy(1.5); // ค่าเริ่มต้น
+          setActualEnergy(1.5);
           setAnomaly({ anomaly: false, message: 'ปกติ' });
         }
       } catch (error: any) {
@@ -120,8 +127,10 @@ const Dashboard = () => {
           cloud_cover: 50,
           date: new Date().toISOString().split('T')[0],
         }]);
-        setActualEnergy(1.5); // ค่าเริ่มต้น
+        setActualEnergy(1.5);
         setAnomaly({ anomaly: false, message: 'ปกติ' });
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -167,6 +176,9 @@ const Dashboard = () => {
       hasConnectionAlert.current = false;
     }
   }, [weatherData, anomaly]);
+
+  if (loading) return <div className={styles.loading}>กำลังโหลดข้อมูล...</div>;
+  if (error) return <div className={styles.error}>ข้อผิดพลาด: {error}</div>;
 
   return (
     <div className={styles.dashboardContainer}>
