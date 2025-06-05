@@ -2,7 +2,7 @@
 node_modules/
 *.log
 .envgit commit -m "Initial commit with backend, frontend, and package-lock"
-
+.next
 node_modules
 *.log
 *.zip
