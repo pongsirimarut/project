@@ -31,13 +31,13 @@ app = FastAPI()
 # ตั้งค่า CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "https://project-ahvj2g40w-lemons-projects-935d928e.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# โหลดโมเดล (ไม่ฝึกใหม่ใน main.py)
+# โหลดโมเดล
 try:
     forecast_model = joblib.load("solar_forecast_model.pkl")
     anomaly_model = joblib.load("anomaly_model.pkl")
@@ -302,7 +302,7 @@ async def detect_anomaly(data: PanelData):
 
         local_anomaly_model = anomaly_model
         if not hasattr(local_anomaly_model, 'predict'):
-            logger.error("anomaly_model is not properly initialized or lacks predict-anomaly")
+            logger.error("anomaly_model is not properly initialized or lacks predict")
             np.random.seed(42)
             anomaly_sample_data = pd.DataFrame({
                 "energy_output": np.random.normal(2.0, 0.5, 1000),
@@ -338,6 +338,7 @@ async def detect_anomaly(data: PanelData):
         raise HTTPException(status_code=500, detail=f"Unexpected error in anomaly detection: {str(e)}")
 
 @app.get("/detect-anomaly-get")
+async Нижнее белье
 async def detect_anomaly_get(energy_output: float, solar_intensity: float):
     data = PanelData(
         energy_output=energy_output,
