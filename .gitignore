@@ -1,4 +1,10 @@
 .vercel/
 node_modules/
 *.log
-.env
+.envgit commit -m "Initial commit with backend, frontend, and package-lock"
+
+node_modules
+*.log
+*.zip
+backend/node_modules
+frontend/node_modules
